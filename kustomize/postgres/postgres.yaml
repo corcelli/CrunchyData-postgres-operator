@@ -1,29 +1,117 @@
-apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
-  name: hippo
+  name: pg-corcelli
+  namespace: corcelli
 spec:
   postgresVersion: 17
   users:
-    - name: rhino
+
+#    - name: _crunchypgbouncer
+#      options: 'SUPERUSER'
+    - name: postgres
+    - name: user01
+      options: 'SUPERUSER'
+    - name: pgbouncer
+      options: 'SUPERUSER'
+    - name: corcelli
+      options: 'SUPERUSER'
       databases:
-        - zoo
+        - corcelli
+        - dbapp01
   instances:
-    - name: instance1
+    - name: corcelli-instance1
+      replicas: 1
       dataVolumeClaimSpec:
         accessModes:
         - "ReadWriteOnce"
         resources:
           requests:
             storage: 1Gi
+#  backups:
+#    pgbackrest:
+#      global:
+#        repo1-retention-full: "2"
+#      repos:
+#      - name: repo1
+#        volume:
+#          volumeClaimSpec:
+#            accessModes:
+#            - "ReadWriteOnce"
+#            resources:
+#              requests:
+#                storage: 1Gi
+#      manual:
+#        repoName: repo1
+#        options:
+#         - --type=full
+
+  patroni:
+    dynamicConfiguration:
+      postgresql:
+        parameters:
+          logging_collector: "off"
+          log_connections: "on"
+          log_destination: "stderr"
+          max_parallel_workers: 2
+          max_worker_processes: 2
+          shared_buffers: 1GB
+          work_mem: 2MB
+        pg_hba:
+          - "host all _crunchypgbouncer all scram-sha-256"
+          - "hostssl all all all scram-sha-256"
+          - "host all all all scram-sha-256"
+
+
+  service:
+    metadata:
+      annotations:
+        my-annotation: value1
+      labels:
+        my-label: value2
+    type: NodePort
+#    port: 5432
+#    targetPort: 32000
+    nodePort: 32000
+
+  replicaService:
+    metadata:
+      annotations:
+        my-annotation: value1
+      labels:
+        my-label: value2
+    type: NodePort
+#    nodePort: 5435
+
   backups:
     pgbackrest:
+      configuration:
+#      - secret:
+#          name: pgo-multi-repo-creds
+      global:
+        repo1-retention-full: "2"
+        repo1-path: /pgbackrest/postgres-operator/repo2
+        repo1-s3-key: s3-key
+        repo1-s3-key-secret: s3-secret
+        log-level-console: "detail"
+        log-level-file: "detail"
       repos:
       - name: repo1
-        volume:
-          volumeClaimSpec:
-            accessModes:
-            - "ReadWriteOnce"
-            resources:
-              requests:
-                storage: 1Gi
+        s3:
+          bucket: "pg-teste"
+          endpoint: "s3.us-west-002.backblazeb2.com"
+          region: "us-west-01"
+      manual:
+        repoName: repo1
+        options:
+         - --type=full
+  proxy:
+    pgBouncer:
+      config:
+        global:
+          pool_mode: session
+          client_tls_sslmode: allow
+          auth_type: scram-sha-256
+          server_tls_sslmode: allow
+          auth_query: "SELECT usename, passwd FROM pg_shadow WHERE usename=$1"
+          auth_user: "_crunchypgbouncer"
+#          auth_type: md5
