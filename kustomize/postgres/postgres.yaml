@@ -1,3 +1,4 @@
+apiVersion: postgres-operator.crunchydata.com/v1beta1
 kind: PostgresCluster
 metadata:
   name: pg-corcelli
@@ -5,9 +6,6 @@ metadata:
 spec:
   postgresVersion: 17
   users:
-
-#    - name: _crunchypgbouncer
-#      options: 'SUPERUSER'
     - name: postgres
     - name: user01
       options: 'SUPERUSER'
@@ -20,30 +18,13 @@ spec:
         - dbapp01
   instances:
     - name: corcelli-instance1
-      replicas: 1
+      replicas: 2
       dataVolumeClaimSpec:
         accessModes:
         - "ReadWriteOnce"
         resources:
           requests:
             storage: 1Gi
-#  backups:
-#    pgbackrest:
-#      global:
-#        repo1-retention-full: "2"
-#      repos:
-#      - name: repo1
-#        volume:
-#          volumeClaimSpec:
-#            accessModes:
-#            - "ReadWriteOnce"
-#            resources:
-#              requests:
-#                storage: 1Gi
-#      manual:
-#        repoName: repo1
-#        options:
-#         - --type=full
 
   patroni:
     dynamicConfiguration:
@@ -60,36 +41,35 @@ spec:
           - "host all _crunchypgbouncer all scram-sha-256"
           - "hostssl all all all scram-sha-256"
           - "host all all all scram-sha-256"
-
+    switchover:
+      enabled: true
+    dynamicConfiguration:
+      failsafe_mode: true
 
   service:
     metadata:
       annotations:
         my-annotation: value1
       labels:
-        my-label: value2
+        my-label: value1
     type: NodePort
-#    port: 5432
-#    targetPort: 32000
     nodePort: 32000
 
   replicaService:
     metadata:
       annotations:
-        my-annotation: value1
+        my-annotation: value2
       labels:
         my-label: value2
     type: NodePort
-#    nodePort: 5435
+    nodePort: 34000
 
   backups:
     pgbackrest:
       configuration:
-#      - secret:
-#          name: pgo-multi-repo-creds
       global:
         repo1-retention-full: "2"
-        repo1-path: /pgbackrest/postgres-operator/repo2
+        repo1-path: /pgbackrest/postgres-operator/hippo-multi-repo/repo2
         repo1-s3-key: s3-key
         repo1-s3-key-secret: s3-secret
         log-level-console: "detail"
@@ -114,4 +94,3 @@ spec:
           server_tls_sslmode: allow
           auth_query: "SELECT usename, passwd FROM pg_shadow WHERE usename=$1"
           auth_user: "_crunchypgbouncer"
-#          auth_type: md5
