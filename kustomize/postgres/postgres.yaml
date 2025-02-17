@@ -7,10 +7,6 @@ spec:
   postgresVersion: 17
   users:
     - name: postgres
-    - name: user01
-      options: 'SUPERUSER'
-    - name: pgbouncer
-      options: 'SUPERUSER'
     - name: corcelli
       options: 'SUPERUSER'
       databases:
@@ -25,6 +21,16 @@ spec:
         resources:
           requests:
             storage: 1Gi
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  postgres-operator.crunchydata.com/cluster: pg-corcelli
+                  postgres-operator.crunchydata.com/instance-set: corcelli-instance1
 
   patroni:
     dynamicConfiguration:
@@ -69,7 +75,7 @@ spec:
       configuration:
       global:
         repo1-retention-full: "2"
-        repo1-path: /pgbackrest/postgres-operator/hippo-multi-repo/repo2
+        repo1-path: /pgbackrest/postgres-operator/repo2
         repo1-s3-key: s3-key
         repo1-s3-key-secret: s3-secret
         log-level-console: "detail"
