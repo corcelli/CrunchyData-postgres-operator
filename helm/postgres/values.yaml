@@ -135,7 +135,13 @@ postgresVersion: 17
 # users sets any custom Postgres users and databases that they have  access to
 # as well as any permissions associated with the user account.
 # users: {}
-
+users:
+  - name: postgres
+  - name: corcelli
+    options: 'SUPERUSER'
+    databases:
+      - db_teste
+      - aplication_01
 # dataSource specifies a data source for bootstrapping a Postgres cluster.
 # dataSource: {}
 
