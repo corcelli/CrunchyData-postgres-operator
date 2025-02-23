@@ -142,6 +142,7 @@ users:
     databases:
       - db_teste
       - aplication_01
+      - dbteste02
 # dataSource specifies a data source for bootstrapping a Postgres cluster.
 # dataSource: {}
 
