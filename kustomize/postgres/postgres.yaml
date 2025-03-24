@@ -39,8 +39,8 @@ spec:
           logging_collector: "off"
           log_connections: "on"
           log_destination: "stderr"
-          max_parallel_workers: 2
-          max_worker_processes: 2
+          max_parallel_workers: 4
+          max_worker_processes: 6
           shared_buffers: 1GB
           work_mem: 2MB
         pg_hba:
